@@ -1,7 +1,7 @@
 /*
  * @Author: Tmier
  * @Date: 2024-01-13 22:44:11
- * @LastEditTime: 2024-01-14 23:36:07
+ * @LastEditTime: 2024-01-15 21:02:06
  * @LastEditors: Tmier
  * @Description: 
  * 
@@ -26,6 +26,7 @@ const createElement = (type, props, ...children) => {
     }
   }
 }
+let root = null
 let nextWorkOfUnit = null
 const render = (el, container) => {
   nextWorkOfUnit = {
@@ -34,6 +35,7 @@ const render = (el, container) => {
       children: [el]
     }
   }
+  root = nextWorkOfUnit
   // const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
   // Object.keys(el.props).forEach(key => {
   //   if(key !== 'children') {
@@ -80,13 +82,12 @@ function initChildren(fiber) {
   })
 }
 function performWorkOfUnit (fiber) {
-  console.log('fiber', fiber);
   if(!fiber.dom) {
     // 1. 创建dom
     const dom = (fiber.dom =  createDom(fiber.type))
     // 2. 处理props
     updateProps(dom, fiber.props)
-    fiber.parent.dom.append(dom)
+    // fiber.parent.dom.append(dom)
   }
   initChildren(fiber)
 
@@ -101,7 +102,20 @@ function WorkLoop(deadline) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit)
     shouldYield = deadline.timeRemaining() < 1
   }
+  if(!nextWorkOfUnit && root) {
+    commitRoot()
+  }
   requestIdleCallback(WorkLoop)
+}
+function commitRoot () {
+  commitWork(root.child)
+  root = null
+}
+function commitWork(fiber) {
+  if(!fiber) return
+  fiber.parent.dom.append(fiber.dom)
+  if(fiber.child) commitWork(fiber.child)
+  if(fiber.sibling) commitWork(fiber.sibling) 
 }
 requestIdleCallback(WorkLoop)
 export default {
