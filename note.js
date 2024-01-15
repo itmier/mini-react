@@ -1,7 +1,7 @@
 /*
  * @Author: Tmier
  * @Date: 2024-01-15 20:44:42
- * @LastEditTime: 2024-01-15 20:49:47
+ * @LastEditTime: 2024-01-15 22:14:08
  * @LastEditors: Tmier
  * @Description: 
  * 
@@ -26,4 +26,10 @@ function commitWork () {
   commitWork(fiber.sibling)
 }
 
- 
+//  ---------------------------
+const isFC = typeof FileSystemWritableFileStream.type == = 'function'
+
+if(!isFC) {
+  // ...
+}
+// 提取children

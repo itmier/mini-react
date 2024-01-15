@@ -1,7 +1,7 @@
 /*
  * @Author: Tmier
  * @Date: 2024-01-13 22:44:11
- * @LastEditTime: 2024-01-15 21:02:06
+ * @LastEditTime: 2024-01-15 23:34:03
  * @LastEditors: Tmier
  * @Description: 
  * 
@@ -21,7 +21,8 @@ const createElement = (type, props, ...children) => {
     props: {
       ...props,
       children: children.map(child => {
-        return typeof child === 'string' ? createTextNode(child) : child
+        const isTextNode = typeof child === 'string' || typeof child === 'number'
+        return isTextNode ? createTextNode(child) : child
       })
     }
   }
@@ -59,9 +60,8 @@ function updateProps (dom, props) {
     }
   })
 }
-function initChildren(fiber) {
+function initChildren(fiber, children) {
   // 3. 转换链表, 设置好指针
-  const children = fiber.props.children
   let prevChild = null
   children.forEach((child, index) => {
     const newFiber = {
@@ -82,19 +82,28 @@ function initChildren(fiber) {
   })
 }
 function performWorkOfUnit (fiber) {
-  if(!fiber.dom) {
-    // 1. 创建dom
-    const dom = (fiber.dom =  createDom(fiber.type))
-    // 2. 处理props
-    updateProps(dom, fiber.props)
-    // fiber.parent.dom.append(dom)
+  const isFC = typeof fiber.type === 'function'
+  if(!isFC) {
+    if(!fiber.dom) {
+      // 1. 创建dom
+      const dom = (fiber.dom =  createDom(fiber.type))
+      // 2. 处理props
+      updateProps(dom, fiber.props)
+      // fiber.parent.dom.append(dom)
+    }
   }
-  initChildren(fiber)
+  const children = isFC ? [fiber.type(fiber.props)] : fiber.props.children
+  initChildren(fiber, children)
 
   // 4. 返回下一个要执行的任务
   if(fiber.child) return fiber.child
-  if(fiber.sibling) return fiber.sibling
-  return fiber.parent?.sibling
+  let nextFiber = fiber
+  while(nextFiber) {
+    if(nextFiber.sibling) {
+      return nextFiber.sibling
+    }
+    nextFiber = nextFiber.parent
+  }
 }
 function WorkLoop(deadline) {
   let shouldYield = false
@@ -113,7 +122,11 @@ function commitRoot () {
 }
 function commitWork(fiber) {
   if(!fiber) return
-  fiber.parent.dom.append(fiber.dom)
+  let fiberParent = fiber.parent
+  while(!fiberParent.dom) {
+    fiberParent = fiberParent.parent
+  }
+  fiber.dom && fiberParent.dom.append(fiber.dom)
   if(fiber.child) commitWork(fiber.child)
   if(fiber.sibling) commitWork(fiber.sibling) 
 }
