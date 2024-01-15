@@ -1,7 +1,7 @@
 /*
  * @Author: Tmier
  * @Date: 2024-01-13 22:44:11
- * @LastEditTime: 2024-01-15 23:34:03
+ * @LastEditTime: 2024-01-16 00:03:43
  * @LastEditors: Tmier
  * @Description: 
  * 
@@ -37,17 +37,6 @@ const render = (el, container) => {
     }
   }
   root = nextWorkOfUnit
-  // const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
-  // Object.keys(el.props).forEach(key => {
-  //   if(key !== 'children') {
-  //     dom[key] = el.props[key]
-  //   }
-  // })
-  // const children = el.props.children
-  // children.forEach(child => {
-  //    child && render(child, dom) // 将子节点挂载到父节点上
-  // })
-  // container.append(dom)
 }
 
 function createDom (type) {
@@ -81,19 +70,29 @@ function initChildren(fiber, children) {
     prevChild = newFiber
   })
 }
+function updateFC (fiber) {
+  const children = [fiber.type(fiber.props)] 
+  initChildren(fiber, children)
+
+}
+function updateHostComponent (fiber) {
+  if(!fiber.dom) {
+    // 1. 创建dom
+    const dom = (fiber.dom =  createDom(fiber.type))
+    // 2. 处理props
+    updateProps(dom, fiber.props)
+    // fiber.parent.dom.append(dom)
+  }
+  const children = fiber.props.children
+  initChildren(fiber, children)
+}
 function performWorkOfUnit (fiber) {
   const isFC = typeof fiber.type === 'function'
-  if(!isFC) {
-    if(!fiber.dom) {
-      // 1. 创建dom
-      const dom = (fiber.dom =  createDom(fiber.type))
-      // 2. 处理props
-      updateProps(dom, fiber.props)
-      // fiber.parent.dom.append(dom)
-    }
+  if(isFC) {
+    updateFC(fiber)
+  } else {
+    updateHostComponent(fiber)
   }
-  const children = isFC ? [fiber.type(fiber.props)] : fiber.props.children
-  initChildren(fiber, children)
 
   // 4. 返回下一个要执行的任务
   if(fiber.child) return fiber.child
