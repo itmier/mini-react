@@ -1,7 +1,7 @@
 /*
  * @Author: Tmier
  * @Date: 2024-01-13 22:44:11
- * @LastEditTime: 2024-01-16 00:03:43
+ * @LastEditTime: 2024-01-17 22:56:13
  * @LastEditors: Tmier
  * @Description: 
  * 
@@ -45,7 +45,13 @@ function createDom (type) {
 function updateProps (dom, props) {
   Object.keys(props).forEach(key => {
     if(key !== 'children') {
-      dom[key] = props[key]
+      if(key.startsWith('on')) {
+        const eventType = key.slice(2).toLowerCase()
+        dom.addEventListener(eventType, props[key])
+      } else {
+
+        dom[key] = props[key]
+      }
     }
   })
 }
@@ -77,7 +83,7 @@ function updateFC (fiber) {
 }
 function updateHostComponent (fiber) {
   if(!fiber.dom) {
-    // 1. 创建dom
+    // 1. 创建dom 
     const dom = (fiber.dom =  createDom(fiber.type))
     // 2. 处理props
     updateProps(dom, fiber.props)
